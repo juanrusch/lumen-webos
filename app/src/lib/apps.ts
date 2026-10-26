@@ -157,7 +157,22 @@ function listViaHomebrew (): Promise<AppEntry[]> {
 		});
 }
 
-/** Read the icons as data URIs in one shell round-trip, cached in localStorage by path.
+/** icons per shell round-trip. The Homebrew Channel's exec keeps at most Node's maxBuffer of output and fails the whole call past it: 1 MB
+ *  on webOS 25's Node, but 200 KB on webOS 6's Node 8, where 27 icons in one call came to 476 KB and every tile fell back to its initial. */
+const ICON_BATCH = 6;
+
+/** Reads one batch of icons as "<index> <base64>" lines, the index counting from 0 within the batch. A batch the service refuses (too
+ *  much output) is split in half and read again, so one large icon costs only itself; an icon refused on its own is left out. */
+function readIconBatch (paths: string[]): Promise<string[]> {
+	return readIcons(paths).then((out) => out.split('\n'), () => {
+		if (paths.length < 2) return [];
+		const half = Math.ceil(paths.length / 2);
+		return readIconBatch(paths.slice(0, half)).then((first) => readIconBatch(paths.slice(half)).then((second) =>
+			first.concat(second.map((line) => line.replace(/^(\d+) /, (_, i) => `${Number(i) + half} `)))));
+	});
+}
+
+/** Read the icons as data URIs, a few per shell round-trip (one after another, to keep the TV's CPU free), cached in localStorage by path.
  *  Icons are requested by *index*, so app IDs never reach the shell. */
 function loadIcons (points: LaunchPoint[]): Promise<Record<string, string>> {
 	const cache = readIconCache();
@@ -172,18 +187,25 @@ function loadIcons (points: LaunchPoint[]): Promise<Record<string, string>> {
 	if (!missing.length) return Promise.resolve(result);
 
 	// one line per icon, "<index> <base64>" (lib/root.ts skips any path that is not a plain absolute path); app IDs never reach the shell
-	return readIcons(missing.map((m) => m.path)).then((out) => {
-		for (const line of out.split('\n')) {
+	const take = (offset: number, lines: string[]) => {
+		for (const line of lines) {
 			const match = /^(\d+) ([A-Za-z0-9+\/=]+)$/.exec(line);
-			const entry = match && missing[Number(match[1])];
+			const entry = match && missing[offset + Number(match[1])];
 			if (!match || !entry) continue;
 			const url = `data:image/png;base64,${match[2]}`;
 			result[entry.id] = url;
 			cache[entry.path] = url;
 		}
+	};
+	let chain: Promise<void> = Promise.resolve();
+	for (let offset = 0; offset < missing.length; offset += ICON_BATCH) {
+		const batch = missing.slice(offset, offset + ICON_BATCH).map((m) => m.path);
+		chain = chain.then(() => readIconBatch(batch).then((lines) => take(offset, lines)));
+	}
+	return chain.then(() => {
 		writeIconCache(cache);
 		return result;
-	}).catch(() => result);
+	});
 }
 
 function readIconCache (): Record<string, string> {
