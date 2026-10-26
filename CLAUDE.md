@@ -2,6 +2,15 @@
 
 A tvOS-style launcher for a rooted LG webOS TV. `app/` is the Preact app (a fork of partridgeworks/webos-launcher, never sent upstream). `tools/` holds the build scripts and the TV-side scripts. `README.md` covers build and install.
 
+## This fork
+
+This is juanrusch's fork of samrenfrew/lumen-webos. Where the rest of this file disagrees, this section wins.
+
+- Changes go to this fork: `origin`, `juanrusch/lumen-webos`. Issues, PRs and releases go there too, so pass `--repo juanrusch/lumen-webos` to `gh`. `upstream` is samrenfrew's repo: fetch and merge from it, and send it a change only when asked, as a PR from a branch on this fork.
+- The TV is an LG OLED48C1 on webOS 6.5.3 (Chromium 79; root services run on Node 8), reached as `ssh lgtv`. Code tuned for webOS 25 is an assumption here until it works on this TV.
+- Actions are off on this fork, so a push to `main` publishes nothing. Build with `python3 tools/build_release.py` and install the `.ipk` over SSH with `luna://com.webos.appInstallService/dev/install`.
+- Where the rules below say Sam, read the fork's owner.
+
 ## The TV
 
 The target TV is an LG 43UT91006LA on webOS 25 (Chromium 120). The repo was first written for a webOS 22 TV, so any rule tuned for that TV is an assumption until it is seen working on this one. `PLAN.md` holds the roadmap and the **Verify on the TV** list; read its "Where things stand" section before starting work.
