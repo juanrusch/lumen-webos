@@ -1,5 +1,6 @@
 import {t as tr} from '../lib/i18n';
 import {channelColor, clockText, progress, timeLeft, type NowNext} from '../lib/livetv';
+import {ChannelName} from './ChannelName';
 
 /** What a Live TV tile shows (TileModel.live). */
 export interface LiveTile extends NowNext {
@@ -30,7 +31,7 @@ export function ChannelTile ({live, classes, onHover, onActivate}: Props) {
 			<div class="tile__box" style={color ? {backgroundColor: color} : undefined}>
 				{live.logo
 					? <img class="chan__logo" src={live.logo} alt="" decoding="async" />
-					: <div class="chan__name">{live.name}</div>}
+					: <ChannelName cls="chan__name" name={live.name} />}
 				{/* empty with no programme on, so every tile keeps the same shape */}
 				<div class="chan__bar"><span style={{transform: `scaleX(${now ? progress(now, at) : 0})`}} /></div>
 			</div>

@@ -1,6 +1,7 @@
 import {useRef} from 'preact/hooks';
 import {CheckMark, Glyph, type GlyphName} from './Glyph';
 import {ChannelTile, type LiveTile} from './ChannelTile';
+import {ChannelName} from './ChannelName';
 
 /** Everything a tile needs to draw itself; rows and grids build these from app/input data. */
 export interface TileModel {
@@ -76,7 +77,7 @@ export function Tile ({model, focused, lifted, checked, dimmed, onHover, onActiv
 					: model.glyphImageUrl
 						? <img class="tile__image tile__image--glyph" src={model.glyphImageUrl} alt="" decoding="async" />
 						: model.wordmark
-							? <div class="chan__name">{model.wordmark}</div>
+							? <ChannelName cls="chan__name" name={model.wordmark} />
 						: model.glyph
 							? <Glyph name={model.glyph} />
 							: <div class="tile__monogram">{model.label.charAt(0).toUpperCase()}</div>}

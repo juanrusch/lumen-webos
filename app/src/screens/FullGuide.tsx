@@ -5,6 +5,7 @@ import {useOkPress} from '../hooks/useOkPress';
 import {channelColor, clockText, progress, timeLeft, type Channel, type Listings, type Programme} from '../lib/livetv';
 import {SCHEDULE_HOURS} from '../hooks/useLiveTv';
 import {rowWindow} from '../lib/windowedList';
+import {ChannelName} from '../components/ChannelName';
 
 interface Props {
 	channels: Channel[];
@@ -133,7 +134,9 @@ export function FullGuide ({channels, listings, from, thin, loading, logos, now,
 							<div key={c.id} class={`fg__row${isAt ? ' fg__row--at' : ''}`} style={{top: `${i * ROW_STEP}px`}} onMouseEnter={() => onAt(i)}>
 								<div class="fg__cell-chan">
 									<span class="fg__num">{c.number}</span>
-									<span class="fg__logo" style={color ? {backgroundColor: color} : undefined}>{logo ? <img src={logo} alt="" decoding="async" /> : <span>{c.name}</span>}</span>
+									{logo
+										? <span class="fg__logo" style={color ? {backgroundColor: color} : undefined}><img src={logo} alt="" decoding="async" /></span>
+										: <ChannelName cls="fg__logo" name={c.name} color={color} span />}
 									<span class="fg__name">{c.name}</span>
 								</div>
 								<div class="fg__line">

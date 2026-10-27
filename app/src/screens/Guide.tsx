@@ -1,5 +1,6 @@
 import {t as tr} from '../lib/i18n';
 import {ScreenBackdrop} from '../components/LowerVeil';
+import {ChannelName} from '../components/ChannelName';
 import {useCallback, useEffect, useRef, useState} from 'preact/hooks';
 import {useKeys, clamp, type NavKey} from '../hooks/useKeys';
 import {useOkPress} from '../hooks/useOkPress';
@@ -129,7 +130,9 @@ export function Guide ({channels, listings, logos, now, schedule, pending, full,
 								onClick={() => onOpen(c)}
 							>
 								<div class="guide__num">{c.number}</div>
-								<div class="guide__logo" style={color ? {backgroundColor: color} : undefined}>{logo ? <img src={logo} alt="" decoding="async" /> : <span>{c.name}</span>}</div>
+								{logo
+									? <div class="guide__logo" style={color ? {backgroundColor: color} : undefined}><img src={logo} alt="" decoding="async" /></div>
+									: <ChannelName cls="guide__logo" name={c.name} color={color} span />}
 								<div class="guide__now">
 									<div class="guide__prog">{on ? on.title : tr(next ? 'Off air' : pending[c.signal] ? 'Loading…' : 'No guide data')}</div>
 									<div class="guide__meta">
