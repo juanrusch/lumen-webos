@@ -28,6 +28,8 @@ seen unless something looks wrong.
 
 Add new items here, with the branch and what to check. Delete an item once Sam has seen it work.
 
+- [ ] Light look focus on the top buttons (verify, branch `looks/first-pass`; the dark look was tried live on the OLED48C1, the light one not at all): with Appearance set to Light, a focused Control Center, Settings or Inputs button turns dark with a white icon, as Control Center's own controls do, not pale glass with a white icon.
+
 ---
 
 ## Open on the TV

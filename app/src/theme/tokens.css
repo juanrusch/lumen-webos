@@ -23,9 +23,9 @@
 	--ink-veil-chevron: rgba(255, 255, 255, 0.5);
 	/* the Guide and the Live TV row's now/next block */
 	--ink-guide: #fff;
-	/* line art on glass: the top buttons, and the stronger Control Center icons */
+	/* line art on glass: the top buttons, and the stronger Control Center icons; a focused top button inverts (--pill-focus-*), so its icon turns dark */
 	--ink-glyph: rgba(255, 255, 255, 0.62);
-	--ink-glyph-focus: rgba(255, 255, 255, 0.62);
+	--ink-glyph-focus: #111;
 	--ink-glyph-strong: rgba(255, 255, 255, 0.9);
 
 	/* ---------- focus-invert: a focused control (a text row, a button) turns into a solid capsule ---------- */
@@ -47,7 +47,8 @@
 
 	/* ---------- accents ---------- */
 	--accent-on: rgb(64, 196, 255);
-	--accent-on-focus: rgb(64, 196, 255);
+	/* on a focused control's white fill */
+	--accent-on-focus: rgb(0, 122, 255);
 	--rain: #a8d8ff;
 	--rain-bar: rgba(124, 196, 255, 0.5);
 	--rain-bar-wet: rgba(124, 196, 255, 0.9);
@@ -55,6 +56,7 @@
 	--rain-pill-wet: #7cc4ff;
 	--danger: #e0564f;
 	--warn: rgb(255, 92, 82);
+	--warn-focus: rgb(215, 0, 21);
 	--star: #ffd60a;
 	/* a channel with no brand colour of its own; lib/livetv.ts channelColor lays the same sweep over a brand colour */
 	--chan-sweep: linear-gradient(160deg, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0.28) 100%);
@@ -91,25 +93,33 @@
 	--glass-sheen-focus: linear-gradient(145deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.12) 55%, rgba(255, 255, 255, 0.22));
 	--glass-rim: inset 2px 2px 1.5px -1px rgba(255, 255, 255, 0.55), inset -2px -2px 1.5px -1px rgba(255, 255, 255, 0.25), inset 0 0 14px rgba(255, 255, 255, 0.05), 0 8px 18px rgba(0, 0, 0, 0.25);
 	--glass-rim-bright: inset 2px 2px 1.5px -1px rgba(255, 255, 255, 0.9), inset -2px -2px 1.5px -1px rgba(255, 255, 255, 0.42), inset 0 0 14px rgba(255, 255, 255, 0.10), 0 8px 18px rgba(0, 0, 0, 0.25);
-	--glass-rim-focus: var(--glass-rim-bright);
+	--glass-rim-focus: 0 8px 18px rgba(0, 0, 0, 0.3);
 	--glass-ink: #fff;
 	--glass-ink-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
 	--glass-panel-sheen: var(--glass-sheen);
 	--glass-panel-rim: var(--glass-rim);
-	/* Control Center */
+	/* a focused top button inverts, as the Settings rows do: an opaque capsule, so it needs no live blur behind it */
+	--pill-focus-fill: rgba(255, 255, 255, 0.92);
+	--pill-focus-sheen: none;
+	--pill-focus-blur: none;
+	/* Control Center: a focused control inverts the same way, white with dark ink */
 	--cc-rim: var(--glass-rim);
 	--cc-slider-rim-focus: var(--glass-rim-bright);
-	--cc-focus-fill: var(--glass-tint);
-	--cc-focus-sheen: var(--glass-sheen-focus);
-	--cc-focus-rim: var(--glass-rim-bright);
-	--cc-focus-glyph: rgba(255, 255, 255, 0.9);
+	--cc-focus-fill: rgba(255, 255, 255, 0.94);
+	--cc-focus-sheen: none;
+	--cc-focus-rim: 0 14px 28px rgba(0, 0, 0, 0.3);
+	--cc-focus-ink: #111;
+	--cc-focus-glyph: #111;
 	--cc-input-filter: brightness(0) invert(1) opacity(0.9);
-	--cc-input-filter-focus: brightness(0) invert(1) opacity(0.9);
-	/* the backlight bar's fill: a second sheet of frost on the bar's glass */
+	--cc-input-filter-focus: brightness(0) opacity(0.8);
+	/* the backlight bar's fill: a second sheet of frost on the bar's glass; focused, the filled part turns white with dark ink */
 	--cc-fill: linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.08) 45%, rgba(255, 255, 255, 0.15) 100%);
-	--cc-fill-focus: linear-gradient(135deg, rgba(255, 255, 255, 0.36) 0%, rgba(255, 255, 255, 0.16) 45%, rgba(255, 255, 255, 0.26) 100%);
+	--cc-fill-focus: rgba(255, 255, 255, 0.94);
 	--cc-fill-rim: inset 2px 2px 1.5px -1px rgba(255, 255, 255, 0.6), inset -2px -2px 1.5px -1px rgba(255, 255, 255, 0.3), inset 0 0 16px rgba(255, 255, 255, 0.1), 4px 0 14px rgba(0, 0, 0, 0.18);
+	--cc-fill-rim-focus: none;
 	--cc-fill-glyph: rgba(255, 255, 255, 0.9);
+	--cc-fill-ink-focus: #111;
+	--cc-fill-glyph-focus: #111;
 
 	/* ---------- glass-bar: the wide glass under the first row ---------- */
 	/* the sheen stops 200px in from each end, or it would spread across hundreds of pixels and look like a focused button */

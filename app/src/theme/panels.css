@@ -43,13 +43,17 @@
 /* a layer each, kept: the open and close fades would otherwise make and drop a layer per control, and each drop redraws its shadow */
 .panel--cc .cc__mod, .panel--cc .cc__caption { will-change: transform, opacity; }
 .cc__mod--focused { transform: scale(1.1); background-image: var(--glass-sheen-focus); box-shadow: var(--cc-slider-rim-focus); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
-/* the light look inverts a focused control (themes.css); the backlight bar keeps its glass, since its fill shows the value */
-.cc__mod--focused:not(.cc__slider) { background-color: var(--cc-focus-fill); background-image: var(--cc-focus-sheen); color: #fff; box-shadow: var(--cc-focus-rim); }
+/* a focused control inverts, as the Settings rows do: white with dark ink, or dark with white ink in the light look (themes.css). It is opaque, so it
+   drops the live blur. The backlight bar keeps its glass, since its fill shows the value */
+.cc__mod--focused:not(.cc__slider) {
+	background-color: var(--cc-focus-fill); background-image: var(--cc-focus-sheen); color: var(--cc-focus-ink); text-shadow: none; box-shadow: var(--cc-focus-rim);
+	-webkit-backdrop-filter: none; backdrop-filter: none;
+}
 .cc__mod svg { position: static; width: 44px; height: 44px; fill: none; stroke: var(--ink-glyph-strong); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .cc__mod--focused:not(.cc__slider) svg { stroke: var(--cc-focus-glyph); }
-/* a control that is on shows a blue icon, as on tvOS */
+/* a control that is on shows a blue icon, as on tvOS; the pill that grows from a focused tile into its list is that tile focused */
 .cc__mod--on svg { stroke: var(--accent-on); }
-.cc__mod--focused.cc__mod--on svg { stroke: var(--accent-on-focus); }
+.cc__mod--focused.cc__mod--on svg, .cc__morph__text.cc__mod--on svg { stroke: var(--accent-on-focus); }
 
 .cc__tile { width: calc(2 * var(--cc-u) + var(--cc-gap)); display: flex; flex-direction: row; align-items: center; padding: 0 14px 0 20px; }
 .cc__icon { flex: 0 0 auto; display: flex; margin-right: 14px; }
@@ -61,13 +65,14 @@
 /* LG's input pictures fill only part of their square: at 50px in the 40px icon space they draw about 28px across, like the other icons */
 .cc__inputicon { width: 50px; height: 50px; margin: -5px; object-fit: contain; filter: var(--cc-input-filter); }
 .cc__mod--focused .cc__inputicon { filter: var(--cc-input-filter-focus); }
-/* "Press OK again to uninstall" reads as a warning */
+/* "Press OK again to uninstall" reads as a warning, a deeper red on the focused control's white fill */
 .cc__opt--warn .cc__name, .cc__opt--warn svg { color: var(--warn); }
+.cc__mod--focused.cc__opt--warn .cc__name, .cc__mod--focused.cc__opt--warn svg { color: var(--warn-focus); stroke: var(--warn-focus); }
 
 /* the backlight bar: the fill is a second sheet of frost on the bar's glass, a brighter tint with its own rim and no second blur */
 .cc__slider { width: calc(3 * var(--cc-u) + 2 * var(--cc-gap)); overflow: hidden; }
 .cc__fill { position: absolute; left: 0; top: 0; bottom: 0; overflow: hidden; background: var(--cc-fill); box-shadow: var(--cc-fill-rim); }
-.cc__mod--focused .cc__fill { background: var(--cc-fill-focus); }
+.cc__mod--focused .cc__fill { background: var(--cc-fill-focus); box-shadow: var(--cc-fill-rim-focus); }
 .cc__slidertext {
 	position: absolute; left: 0; top: 0; bottom: 0; width: calc(3 * var(--cc-u) + 2 * var(--cc-gap)); box-sizing: border-box; padding: 0 26px 0 22px;
 	display: flex; flex-direction: row; align-items: center; font-size: 22px; font-weight: 600; white-space: nowrap;
@@ -75,6 +80,8 @@
 .cc__slidertext svg { width: 34px; height: 34px; margin-right: 12px; }
 .cc__fill .cc__slidertext { color: #fff; }
 .cc__fill .cc__slidertext svg { stroke: var(--cc-fill-glyph); }
+.cc__mod--focused .cc__fill .cc__slidertext { color: var(--cc-fill-ink-focus); }
+.cc__mod--focused .cc__fill .cc__slidertext svg { stroke: var(--cc-fill-glyph-focus); }
 .cc__num { margin-left: auto; font-weight: 500; }
 
 .cc__caption { height: 30px; line-height: 30px; text-align: center; font-size: 22px; font-weight: 600; color: #fff; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6); }
@@ -90,7 +97,8 @@
 .cc__list:not(.cc__list--shown) .cc__opt { opacity: 0; }
 /* height and gap match OPT_H and OPT_GAP in ControlCenter.tsx */
 .panel--cc .cc__opt { width: 100%; height: 72px; margin-bottom: 12px; border-radius: 36px; }
-.panel--cc .cc__opt.cc__mod--focused { transform: scale(var(--lift-press)); }
+/* the backlight bar grows like the list pills: at 1.1 its 306px would add 15px a side and nearly touch Eye Comfort */
+.panel--cc .cc__opt.cc__mod--focused, .panel--cc .cc__slider.cc__mod--focused { transform: scale(var(--lift-press)); }
 .cc__opt .cc__icon svg { width: 34px; height: 34px; }
 
 /* the pill that grows from a tile into the list: its glass, its rim on its own timing, and the tile's text on top */
@@ -99,6 +107,6 @@
 /* the fill without its rim and shadow, which would swell as it scales */
 .panel--cc .cc__morph > .cc__morph__glass { box-shadow: none; }
 .cc__morph__rim { box-shadow: var(--cc-focus-rim); }
-.panel--cc .cc__morph__text { position: absolute; pointer-events: none; color: #fff; text-shadow: var(--glass-ink-shadow); }
+.panel--cc .cc__morph__text { position: absolute; pointer-events: none; color: var(--cc-focus-ink); text-shadow: none; }
 .cc__morph__text svg { position: static; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.cc__morph__text:not(.cc__mod--on) svg { stroke: rgba(255, 255, 255, 0.9); }
+.cc__morph__text:not(.cc__mod--on) svg { stroke: var(--cc-focus-glyph); }

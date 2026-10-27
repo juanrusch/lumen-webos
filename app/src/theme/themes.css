@@ -24,6 +24,9 @@ html.light {
 	--focus-shadow: 0 8px 18px rgba(20, 24, 40, 0.30);
 
 	--accent-on: rgb(0, 122, 255);
+	/* a focused control is dark in the light look, so it keeps the bright blue and red */
+	--accent-on-focus: rgb(64, 196, 255);
+	--warn-focus: var(--warn);
 	--chan-info-shadow: none;
 	--meter: rgba(20, 22, 32, 0.2);
 	--meter-fill: #14151b;
@@ -47,19 +50,25 @@ html.light {
 	--glass-bar-sheen: linear-gradient(135deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0.07) 42%, rgba(255, 255, 255, 0.16) 100%);
 	--glass-bar-rim: inset 0 0 0 1.5px rgba(255, 255, 255, 0.85), 0 18px 40px rgba(20, 24, 40, 0.20);
 	--glass-bar-highlight: none;
+	/* a focused top button inverts to dark, as Control Center's controls do (before, it stayed pale glass with a white icon) */
+	--pill-focus-fill: #14151b;
 	/* a focused Control Center control inverts, as the Settings rows do; the backlight bar keeps its glass */
 	--cc-rim: inset 0 0 0 1.5px rgba(255, 255, 255, 0.8), 0 4px 12px rgba(20, 24, 40, 0.12);
 	--cc-slider-rim-focus: inset 0 0 0 1.5px rgba(255, 255, 255, 0.8), 0 4px 12px rgba(20, 24, 40, 0.12);
 	--cc-focus-fill: #14151b;
 	--cc-focus-sheen: none;
 	--cc-focus-rim: 0 8px 18px rgba(20, 24, 40, 0.30);
+	--cc-focus-ink: #fff;
 	--cc-focus-glyph: #fff;
 	--cc-input-filter: brightness(0) opacity(0.72);
 	--cc-input-filter-focus: brightness(0) invert(1);
 	--cc-fill: rgba(20, 21, 27, 0.72);
 	--cc-fill-focus: #14151b;
 	--cc-fill-rim: inset 2px 2px 1.5px -1px rgba(255, 255, 255, 0.95), inset -2px -2px 1.5px -1px rgba(255, 255, 255, 0.5), inset 0 0 16px rgba(255, 255, 255, 0.16), 4px 0 14px rgba(0, 0, 0, 0.18);
+	--cc-fill-rim-focus: var(--cc-fill-rim);
 	--cc-fill-glyph: #fff;
+	--cc-fill-ink-focus: #fff;
+	--cc-fill-glyph-focus: #fff;
 
 	--glass-row: rgba(255, 255, 255, 0.42);
 	--glass-row-on: rgba(255, 255, 255, 0.42);

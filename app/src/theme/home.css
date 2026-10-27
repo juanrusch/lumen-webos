@@ -56,11 +56,13 @@
 	transition: transform var(--dur-focus) ease-out;
 }
 .pill svg { width: 28px; height: 28px; fill: none; stroke: var(--ink-glyph); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-/* only the focused or open button has the live blur: each one adds about 2ms of GPU draw to every frame (docs/frame-rate.md) */
-.pill--focused, .pill--open { transform: scale(1.14); background-image: var(--glass-sheen-focus); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
-.pill--focused { color: var(--ink-photo-1); box-shadow: var(--glass-rim-focus); }
-.pill--focused svg { stroke: var(--ink-glyph-focus); }
-.pill--open { box-shadow: var(--glass-rim-bright); }
+/* the focused or open button inverts to an opaque capsule (--pill-focus-*); it needs no live blur, which would add about 2ms of GPU draw to every frame (docs/frame-rate.md) */
+.pill--focused, .pill--open {
+	transform: scale(1.14); background-color: var(--pill-focus-fill); background-image: var(--pill-focus-sheen); box-shadow: var(--glass-rim-focus);
+	-webkit-backdrop-filter: var(--pill-focus-blur); backdrop-filter: var(--pill-focus-blur);
+}
+.pill--focused { color: var(--ink-photo-1); }
+.pill--focused svg, .pill--open svg { stroke: var(--ink-glyph-focus); }
 .pill__label {
 	position: absolute; top: 72px; left: 50%; transform: translateX(-50%);
 	font-size: 22px; white-space: nowrap; text-shadow: var(--scrim-text);
