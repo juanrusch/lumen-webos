@@ -157,22 +157,19 @@ function listViaHomebrew (): Promise<AppEntry[]> {
 		});
 }
 
-/** icons per shell round-trip. The Homebrew Channel's exec keeps at most Node's maxBuffer of output and fails the whole call past it: 1 MB
- *  on webOS 25's Node, but 200 KB on webOS 6's Node 8, where 27 icons in one call came to 476 KB and every tile fell back to its initial. */
-const ICON_BATCH = 6;
-
-/** Reads one batch of icons as "<index> <base64>" lines, the index counting from 0 within the batch. A batch the service refuses (too
- *  much output) is split in half and read again, so one large icon costs only itself; an icon refused on its own is left out. */
-function readIconBatch (paths: string[]): Promise<string[]> {
-	return readIcons(paths).then((out) => out.split('\n'), () => {
-		if (paths.length < 2) return [];
+/** Reads icons as "<index> <base64>" lines, the index counting from `from`. The Homebrew Channel's exec fails the whole call once its output
+ *  passes Node's maxBuffer (1 MB on webOS 25, 200 KB on webOS 6's Node 8), so only then is the read split in half and tried again; an icon
+ *  too large on its own is left out. Any other failure (a timeout, no service) is passed on, not retried. */
+function readIconLines (paths: string[], from = 0): Promise<string[]> {
+	return readIcons(paths).then((out) => out.split('\n').map((line) => line.replace(/^(\d+) /, (_, i: string) => `${Number(i) + from} `)), (e: Error) => {
+		if (!/maxBuffer/.test(e && e.message) || paths.length < 2) throw e;
 		const half = Math.ceil(paths.length / 2);
-		return readIconBatch(paths.slice(0, half)).then((first) => readIconBatch(paths.slice(half)).then((second) =>
-			first.concat(second.map((line) => line.replace(/^(\d+) /, (_, i) => `${Number(i) + half} `)))));
+		// one half after the other, to keep the TV's CPU free
+		return readIconLines(paths.slice(0, half), from).then((first) => readIconLines(paths.slice(half), from + half).then((second) => first.concat(second), () => first));
 	});
 }
 
-/** Read the icons as data URIs, a few per shell round-trip (one after another, to keep the TV's CPU free), cached in localStorage by path.
+/** Read the icons as data URIs, cached in localStorage by path: one shell round-trip, split only when the TV's limit refuses it.
  *  Icons are requested by *index*, so app IDs never reach the shell. */
 function loadIcons (points: LaunchPoint[]): Promise<Record<string, string>> {
 	const cache = readIconCache();
@@ -187,25 +184,18 @@ function loadIcons (points: LaunchPoint[]): Promise<Record<string, string>> {
 	if (!missing.length) return Promise.resolve(result);
 
 	// one line per icon, "<index> <base64>" (lib/root.ts skips any path that is not a plain absolute path); app IDs never reach the shell
-	const take = (offset: number, lines: string[]) => {
+	return readIconLines(missing.map((m) => m.path)).then((lines) => {
 		for (const line of lines) {
 			const match = /^(\d+) ([A-Za-z0-9+\/=]+)$/.exec(line);
-			const entry = match && missing[offset + Number(match[1])];
+			const entry = match && missing[Number(match[1])];
 			if (!match || !entry) continue;
 			const url = `data:image/png;base64,${match[2]}`;
 			result[entry.id] = url;
 			cache[entry.path] = url;
 		}
-	};
-	let chain: Promise<void> = Promise.resolve();
-	for (let offset = 0; offset < missing.length; offset += ICON_BATCH) {
-		const batch = missing.slice(offset, offset + ICON_BATCH).map((m) => m.path);
-		chain = chain.then(() => readIconBatch(batch).then((lines) => take(offset, lines)));
-	}
-	return chain.then(() => {
 		writeIconCache(cache);
 		return result;
-	});
+	}).catch(() => result);
 }
 
 function readIconCache (): Record<string, string> {
@@ -228,7 +218,7 @@ function writeIconCache (cache: Record<string, string>): void {
 const COLOR_CACHE_KEY = 'launcher-icon-colors-v2';
 
 function readColorCache (): Record<string, string> {
-	try { return JSON.parse(localStorage.getItem(COLOR_CACHE_KEY) || '{}') as Record<string, string>; } catch { return {}; }
+	return readCache<Record<string, string>>(COLOR_CACHE_KEY) || {};
 }
 
 /** what one icon cost (boot timeline): how it ended, its size, and the time spent drawing and reading it */
@@ -283,7 +273,7 @@ function withIconColor (entry: AppEntry): Promise<AppEntry> {
 	return sampleColor(entry.iconUrl, entry.id).then((color) => {
 		const next = readColorCache();
 		next[key] = color || NO_COLOR;
-		try { localStorage.setItem(COLOR_CACHE_KEY, JSON.stringify(next)); } catch { /* full: sampled again next time */ }
+		writeCache(COLOR_CACHE_KEY, next);
 		return {...entry, color: color || entry.color};
 	});
 }

@@ -34,6 +34,7 @@ curl -s -m 3 http://127.0.0.1:19998/json >/dev/null || ssh -o BatchMode=yes -o L
 
 If the tunnel goes stale, run `pkill -f 19998:127.0.0.1:9998` and open it again. Then use `node tools/tv/cdp.mjs`:
 
+- First, find out where Sam is: `eval 'JSON.stringify(lumen.where())'`. It gives the screen (`home`, `settings`, `guide`, `full guide`, `ambient`), whether Control Center is open, and each focused part with its label, its index and the row it sits in. The last entry is what OK presses. Read it before and after a key press instead of guessing from a screenshot. It exists on dev builds only (`npm run deploy:home`); if `lumen` is undefined, the TV runs a Channel release.
 - `eval '<expr>'` runs in the live page. Wrap objects in `JSON.stringify(...)`. Use it to check a **(verify)** item from page state (classes, `getComputedStyle`, `getBoundingClientRect`) before you ask Sam to look.
 - `css '<css>'` sets a `<style id="live">` block, and `css ''` clears it.
 - `shot <file.png> [x,y,w,h]` saves a 1920x1080 PNG of about 2 MB. Save it in the scratchpad, and read it yourself before you send it.
@@ -54,4 +55,4 @@ Use this for a look-and-feel change (spacing, size, position, colour), where one
 2. Inject the change with `css` (or `eval` for a DOM or state change). Say in one line what to look at, and wait for his reply. Make one change per round.
 3. When Sam says it looks wrong ("things moved", "can you see?"), take a `shot` and measure with `eval`. Do not guess. For example, an absolute label once collapsed the tiles from 212px to 144px, and `getBoundingClientRect` showed it at once.
 4. A heavy effect can look right and still drop the frame rate. Sam judges smoothness on the TV, and the TV's graphics chip is weak (`RESEARCH.md` section 4).
-5. When Sam says it is right, write the final values into source (`app/src/theme/global.css` or the component), and install it with `npm run deploy:home`. Then clear the live block. The injected CSS is never the record.
+5. When Sam says it is right, write the final values into source (the matching file in `app/src/theme/`, a token in `tokens.css` or `themes.css` where the value is one, or the component), and install it with `npm run deploy:home`. Then clear the live block. The injected CSS is never the record.

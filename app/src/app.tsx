@@ -27,6 +27,9 @@ import {Ambient} from './components/Ambient';
 import {setVideoChoice, setVideoPaused, setVideoWallpaper, VIDEO_PLACES} from './lib/wallpaperVideo';
 import {setAmbientFlag, setSaverOffFlag, setVideoFlag, startScreensaver} from './lib/system';
 import {setFpsCounter} from './lib/fps';
+import {setWhere} from './lib/where';
+import {onMinute} from './lib/minute';
+import {useHtmlClasses} from './hooks/useHtmlClasses';
 import {ControlCenter, prefetchControls, type CenterAction} from './components/ControlCenter';
 import {CITIES, COUNTRIES} from './config/cities';
 import {AUTO_PLACE, peekWeather, readWeather, type Weather} from './lib/weather';
@@ -34,19 +37,19 @@ import {useLiveTv} from './hooks/useLiveTv';
 import {channelColor, nowNextAt, rowChannels, type Channel} from './lib/livetv';
 import {openChannel, runningApps, uninstallApp} from './lib/root';
 import {bootMark, navMark} from './lib/log';
-import {isDark, LANGS, setClockMode, setLang} from './lib/i18n';
+import {LANGS, setClockMode, setLang} from './lib/i18n';
 
 type Screen = 'home' | 'settings' | 'ambient' | 'guide';
 
 const ROW = {apps: 'apps', sources: 'sources', misc: 'misc', dock: 'dock', live: 'livetv', channels: 'channels'} as const;
 /** the Live TV row: the Guide tile first, then its channels' tiles (channel:<channelId>) */
 const LIVE = {prefix: 'channel:', guide: 'livetv:guide'} as const;
-/** the width of a channel tile's now/next block (.chan__info in global.css): the row scrolls on so the focused tile always has this to its right */
+/** the width of a channel tile's now/next block (.chan__info in theme/live-tv.css): the row scrolls on so the focused tile always has this to its right */
 const LIVE_INFO_W = 660;
 /** how much higher the Live TV row sits when focused, so its now/next block fits on screen */
 const LIVE_BELOW = 150;
 const MISC = {lgHome: 'lg-home', settings: 'settings'} as const;
-const OPTION = {liveTv: 'live-tv-row', ambient: 'ambient', ambientOn: 'ambient-on', ambientSeconds: 'ambient-seconds', ambientBrightness: 'ambient-brightness', ambientPrint: 'ambient-print', fps: 'fps-counter', restore: 'restore-backup', focus: 'focus-strength', firstRow: 'first-row', videoHours: 'video-hours', dockBlur: 'dock-blur', liquidDock: 'liquid-dock', reduceMotion: 'reduce-motion', hideNames: 'hide-names', showRecents: 'show-recents', dockHide: 'dock-hide', showAmPm: 'show-ampm', showAll: 'show-all-apps', weather: 'show-weather', homeCast: 'home-forecast', saverCast: 'saver-forecast', immichUrl: 'immich-url', immichKey: 'immich-key', immichTest: 'immich-test', city: 'weather-city', country: 'weather-country', idle: 'idle-screensaver', wpAuto: 'wp-auto', immichDays: 'immich-recent-days', wpType: 'wp-type', wpNew: 'wp-new', nightDim: 'night-dim', dockDim: 'dock-dim', darkMode: 'dark-mode', language: 'language', clock: 'clock-format'} as const;
+const OPTION = {liveTv: 'live-tv-row', ambient: 'ambient', ambientOn: 'ambient-on', ambientSeconds: 'ambient-seconds', ambientBrightness: 'ambient-brightness', ambientPrint: 'ambient-print', fps: 'fps-counter', restore: 'restore-backup', focus: 'focus-strength', firstRow: 'first-row', videoHours: 'video-hours', dockBlur: 'dock-blur', liquidDock: 'liquid-dock', reduceMotion: 'reduce-motion', hideNames: 'hide-names', showRecents: 'show-recents', dockHide: 'dock-hide', showAmPm: 'show-ampm', showAll: 'show-all-apps', weather: 'show-weather', homeCast: 'home-forecast', saverCast: 'saver-forecast', immichUrl: 'immich-url', immichKey: 'immich-key', immichTest: 'immich-test', city: 'weather-city', country: 'weather-country', idle: 'idle-screensaver', wpAuto: 'wp-auto', immichDays: 'immich-recent-days', wpType: 'wp-type', wpNew: 'wp-new', nightDim: 'night-dim', dockDim: 'dock-dim', captions: 'wallpaper-captions', darkMode: 'dark-mode', language: 'language', clock: 'clock-format'} as const;
 const WP_AUTO_CHOICES = [0, 0.5, 1, 5, 15, 30, 60];   // minutes
 /** when the video wallpaper plays (Settings > Wallpaper > Video wallpaper hours): [first hour, hour it stops]; always = no limit */
 const VIDEO_HOURS: Record<string, [number, number]> = {day: [7, 19], evening: [17, 23], night: [19, 7]};
@@ -69,13 +72,6 @@ const TOP_ITEMS: TileModel[] = [
 	{key: 'controls', label: 'Control Center', glyph: 'sliders'},
 	{key: MISC.settings, label: 'Settings', glyph: 'gear'},
 	{key: 'inputs', label: 'Inputs', glyph: 'inputs'}
-];
-/** What the time pill's menu lists. */
-const MENU_ITEMS: TileModel[] = [
-	{key: 'controls', label: 'Quick Controls', glyph: 'sliders'},
-	{key: MISC.lgHome, label: 'LG Home', glyph: 'house'},
-	{key: MISC.settings, label: 'Settings', glyph: 'gear'},
-	{key: 'screensaver', label: 'Start Screensaver', glyph: 'screensaver'}
 ];
 
 
@@ -243,39 +239,20 @@ export function App () {
 	// a backlight left low by a screensaver that never ended goes back up
 	useEffect(() => afterFirstFrame(restoreLeftoverBacklight, 3000), []);
 
-	// night: a dimmer wallpaper, always or between 19:00 and 06:00
+	useHtmlClasses(config);
+	// the Control Center's values are read once a return has caught up, so the reads do not slow the redraw
 	useEffect(() => {
-		const apply = () => { const h = new Date().getHours(); document.documentElement.classList.toggle('night', config.wallpaperDim === 'always' || (config.wallpaperDim === 'night' && (h >= 19 || h < 6))); };
-		apply();
-		const id = window.setInterval(apply, 60000);
-		return () => { window.clearInterval(id); document.documentElement.classList.remove('night'); };
-	}, [config.wallpaperDim]);
-	useEffect(() => {
-		const apply = () => { const dark = isDark(config.darkMode); document.documentElement.classList.toggle('dark', dark); document.documentElement.classList.toggle('light', !dark); };
-		apply();
-		const id = window.setInterval(apply, 60000);
-		return () => window.clearInterval(id);
-	}, [config.darkMode]);
-	useEffect(() => { document.documentElement.classList.toggle('reduce-motion', config.reduceMotion); }, [config.reduceMotion]);
-	useEffect(() => { document.documentElement.classList.toggle('hide-names', config.hideNames); }, [config.hideNames]);
-	useEffect(() => { document.documentElement.classList.toggle('hide-recents', !config.showRecents); }, [config.showRecents]);
-	// html.settled: the veil and lower rows are drawn only once a return has caught up, so the return redraws less but Down stays smooth (docs/startup-perf.md)
-	useEffect(() => {
-		const root = document.documentElement.classList;
 		let timer = 0;
 		const onVisibility = () => {
 			window.clearTimeout(timer);
-			if (document.hidden) { root.remove('settled'); return; }
-			timer = window.setTimeout(() => { root.add('settled'); prefetchControls(); }, 4000);
+			if (!document.hidden) timer = window.setTimeout(prefetchControls, 4000);
 		};
 		onVisibility();
 		document.addEventListener('visibilitychange', onVisibility);
-		return () => { window.clearTimeout(timer); document.removeEventListener('visibilitychange', onVisibility); root.remove('settled'); };
+		return () => { window.clearTimeout(timer); document.removeEventListener('visibilitychange', onVisibility); };
 	}, []);
 	useEffect(() => setFpsCounter(__LUMEN_DEV__ && config.fpsCounter), [config.fpsCounter]);
-	// the glass is always live blur (index.html sets the class first)
-	useEffect(() => { document.documentElement.classList.add('liveblur'); }, []);
-	useEffect(() => { document.documentElement.classList.toggle('dockblur', config.dockBlur); }, [config.dockBlur]);
+	useEffect(() => setWhere(screen === 'guide' && config.guideFull ? 'full guide' : screen, controls), [screen, controls, config.guideFull]);
 	useEffect(() => setLiquidDock(config.liquidDock), [config.liquidDock]);
 	useEffect(() => setVideoChoice(config.videoPlaces), [config.videoPlaces]);
 	// the video wallpaper plays only within its hours (checked each minute); the still wallpaper shows the rest of the time
@@ -283,8 +260,7 @@ export function App () {
 	useEffect(() => {
 		const check = () => setVideoTime(inVideoHours(config.videoHours));
 		check();
-		const id = window.setInterval(check, 60000);
-		return () => window.clearInterval(id);
+		return onMinute(check);
 	}, [config.videoHours]);
 	const videoOn = config.videoWallpaper && videoTime;
 	const videoOnRef = useRef(videoOn);
@@ -292,11 +268,6 @@ export function App () {
 	// the wallpaper the screensaver opens on when started from the home screen; none when the TV's screensaver opens it
 	const ambientOpening = useRef<ReturnType<typeof shownWallpaper>>(null);
 	useEffect(() => setVideoWallpaper(videoOn), [videoOn]);
-	useEffect(() => {
-		const root = document.documentElement.classList;
-		root.toggle('focus-subtle', config.focusStrength === 'subtle');
-		root.toggle('focus-strong', config.focusStrength === 'strong');
-	}, [config.focusStrength]);
 	useEffect(() => { setAmbientFlag(config.ambientOn); }, [config.ambientOn]);
 	useEffect(() => { setSaverOffFlag(config.saverOff); }, [config.saverOff]);
 	useEffect(() => { setVideoPaused(screen !== 'home'); document.documentElement.classList.toggle('in-settings', screen === 'settings' || screen === 'guide'); }, [screen]);
@@ -496,6 +467,12 @@ export function App () {
 				label: 'Dim when the dock is hidden',
 				description: 'With the dock away, the wallpaper fades darker. It brightens again when the dock comes back.',
 				value: config.dockDim
+			}, {
+				id: OPTION.captions,
+				group: 'home' as const,
+				label: 'Wallpaper captions',
+				description: 'With the dock away, the picture\'s title and artist, or the video\'s place, show at the bottom right.',
+				value: config.wallpaperCaptions
 			}] : []),
 			{
 				id: OPTION.weather,
@@ -931,6 +908,7 @@ export function App () {
 		else if (optionId === OPTION.dockBlur) updateConfig({...config, dockBlur: !config.dockBlur});
 		else if (optionId === OPTION.liquidDock) updateConfig({...config, liquidDock: !config.liquidDock});
 		else if (optionId === OPTION.dockDim) updateConfig({...config, dockDim: !config.dockDim});
+		else if (optionId === OPTION.captions) updateConfig({...config, wallpaperCaptions: !config.wallpaperCaptions});
 		else if (optionId === OPTION.ambientPrint) updateConfig({...config, ambientPrint: !config.ambientPrint});
 		else if (optionId === OPTION.wpNew) updateConfig({...config, wpNewOnLaunch: !config.wpNewOnLaunch});
 	}, [config, immich.ready, testImmich]);
@@ -987,7 +965,7 @@ export function App () {
 	return (
 		<>
 			{/* Home stays mounted under Settings so it keeps its focus position. */}
-			<Home rows={rows} tiles={TILES_FOR[firstRow] || TILES_FOR[6]} perRow={firstRow} topItems={TOP_ITEMS} menuItems={MENU_ITEMS} inputs={shownInputs.map(inputTile)} active={screen === 'home' && !controls} onActivate={onActivate} showPeriod={config.showAmPm} onEdit={onEdit} folders={folderMap} weather={weather} weatherLine={config.showWeather && !(config.homeForecast && config.homeForecastSize === 'large')} forecast={config.homeForecast ? config.homeForecastSize as 'small' | 'large' : undefined} dockHide={config.dockHide} dockDim={config.dockDim} focusRow={focusRow} />
+			<Home rows={rows} tiles={TILES_FOR[firstRow] || TILES_FOR[6]} perRow={firstRow} topItems={TOP_ITEMS} inputs={shownInputs.map(inputTile)} active={screen === 'home' && !controls} onActivate={onActivate} showPeriod={config.showAmPm} onEdit={onEdit} folders={folderMap} weather={weather} weatherLine={config.showWeather && !(config.homeForecast && config.homeForecastSize === 'large')} forecast={config.homeForecast ? config.homeForecastSize as 'small' | 'large' : undefined} dockHide={config.dockHide} dockDim={config.dockDim} captions={config.wallpaperCaptions} focusRow={focusRow} />
 			{screen === 'ambient' && <Ambient source={config.ambient} seconds={config.ambientSeconds} backlight={AMBIENT_BACKLIGHT[config.ambientBrightness]} weather={weather} weatherLine={config.showWeather && !(config.saverForecast && config.saverForecastSize === 'large')} forecast={config.saverForecast ? config.saverForecastSize as 'small' | 'large' : undefined} showPeriod={config.showAmPm} print={config.ambientPrint} opening={ambientOpening.current} onExit={() => setScreen('home')} />}
 			{screen === 'guide' && <Guide channels={live.channels} listings={live.listings} logos={live.logos} now={live.now} schedule={live.schedule} pending={live.pending} full={config.guideFull} onMode={(full) => { if (configRef.current.guideFull !== full) updateConfig({...configRef.current, guideFull: full}); }} active={!controls} onOpen={watchChannel} onClose={() => setScreen('home')} />}
 			{screen === 'settings' && <Settings tabs={tabs} wallpaper={wallpaper} options={options} active onToggle={onToggle} onReorder={onReorder} onOption={onOption} onChoose={onChoose} onText={onText} onClose={() => setScreen('home')} />}
