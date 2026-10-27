@@ -78,8 +78,9 @@ html.dark.wp-video { --wp-bg: linear-gradient(rgba(8, 10, 18, 0.62), rgba(8, 10,
 	background-size: auto, cover; background-position: 0 0, center; background-repeat: no-repeat;
 }
 .screen--lower .lowerveil { opacity: 1; transition: opacity var(--dur-veil-down) var(--ease-veil-down); }
-/* the night dimming multiplies the veil's picture by a grey of 55%, which matches the wallpaper at opacity 0.55 over black (not over the video, not in the light look) */
-html.night:not(.light):not(.wp-video) .lowerveil { background-color: rgb(140, 140, 140); background-blend-mode: normal, multiply; }
+/* the night dimming multiplies the veil's picture by a grey of 55%, which matches the wallpaper at opacity 0.55 over black (not over the video, not in the light look).
+   Only with a picture (wp-image): with none, the grey has nothing to multiply and shows as it is. */
+html.night.wp-image:not(.light):not(.wp-video) .lowerveil { background-color: rgb(140, 140, 140); background-blend-mode: normal, multiply; }
 html.wp-video .lowerveil { background-color: transparent; background-image: var(--veil-video); }
 .screen--dockhidden .lowerveil { display: none; }
 /* the picture is drawn in a canvas (components/LowerVeil.tsx): the veil itself draws nothing, so it is one layer with no tiles */
