@@ -461,6 +461,16 @@ export function Home ({rows, topItems, inputs, active, onActivate, showPeriod, o
 	// going down into the grid slides everything up until the glass bar is near the top of the screen with the grid under it, as on tvOS;
 	// a focused row lower than GRID_BOTTOM scrolls the grid on
 	const rowsRef = useRef<HTMLDivElement>(null);
+	// where each row's tiles sit, read once and kept: reading offsetTop here, right after a key's render, forced a layout of the page on every
+	// Down (about 24 ms on the TV, docs/research/frame-rate.md). Read again when the rows change size or change what they hold
+	const tops = useRef<{key: string; at: number[]} | null>(null);
+	useEffect(() => {
+		const el = rowsRef.current;
+		if (!el || typeof ResizeObserver === 'undefined') return undefined;
+		const watch = new ResizeObserver(() => { tops.current = null; });
+		watch.observe(el);
+		return () => watch.disconnect();
+	}, []);
 	useLayoutEffect(() => {
 		const el = rowsRef.current;
 		if (!el) return;
@@ -468,11 +478,16 @@ export function Home ({rows, topItems, inputs, active, onActivate, showPeriod, o
 		const tilesTop = (row: HTMLElement) => el.offsetTop + row.offsetTop + ((row.querySelector('.row__viewport') as HTMLElement | null)?.offsetTop || 0);
 		let shift = 0;
 		if (lower && kids[0] && kids[rowIndex]) {
-			shift = tilesTop(kids[0]) - GRID_TOP;
-			shift = Math.max(shift, tilesTop(kids[rowIndex]) - GRID_BOTTOM + (rows[rowIndex].below || 0));
+			const key = `${late}|${tiles ? `${tiles.size}x${tiles.height}` : ''}|${rows.map((r) => `${r.id}:${r.items.length}`).join(',')}`;
+			if (!tops.current || tops.current.key !== key || tops.current.at.length !== kids.length) tops.current = {key, at: Array.from(kids).map(tilesTop)};
+			const at = tops.current.at;
+			shift = at[0] - GRID_TOP;
+			shift = Math.max(shift, at[rowIndex] - GRID_BOTTOM + (rows[rowIndex].below || 0));
 		}
-		// only on a change: even a same-value write restyles the rows, and the bar's glass then repaints
-		if (el.style.getPropertyValue('--lower-shift') !== shift + 'px') el.style.setProperty('--lower-shift', shift + 'px');
+		// a transform, not a custom property: a custom property on the rows restyles every tile in them (about 30 ms on the TV), a transform only
+		// the rows. Hiding the dock moves the rows by its class (home.css), so no inline transform then. Only on a change: Preact's style string can reset it
+		const want = lower && !n.dockHidden ? `translateY(${-shift}px)` : '';
+		if (el.style.transform !== want) el.style.transform = want;
 	});
 	const overlay = n.zone === 'panel' || n.zone === 'ctx' || n.zone === 'folder';
 	const topPointer = (i: number) => () => { if (!overlay && realPointer.current) { n.mode = 'pointer'; n.engaged = true; n.zone = 'top'; n.topIndex = i; render(); } };

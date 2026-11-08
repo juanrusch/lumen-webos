@@ -1,0 +1,8 @@
+/* Settings > Liquid glass dock (lib/liquidGlass.ts): the bar bends the picture at its rim (an SVG displacement); over a video it only tints, and it is off while the rows are down.
+   Its own sheet, which liquidGlass.ts adds to the page only while the setting is on: a rule that checks .rows--lower on the plate makes Chromium restyle
+   the plate on every Down and Up, and the restyle repaints its whole sheen (about 0.7 megapixels a move, docs/research/frame-rate.md). */
+html.liquiddock .rows:not(.rows--lower) > .row:first-child > .row__glass {
+	-webkit-backdrop-filter: blur(0.75px) url(#lg-dock) brightness(1.1) saturate(1.5); backdrop-filter: blur(0.75px) url(#lg-dock) brightness(1.1) saturate(1.5);
+	background: rgba(0, 0, 0, 0.3); box-shadow: inset 0 0 4px 0 rgba(250, 250, 250, 0.5), 0 20px 44px rgba(0, 0, 0, 0.28);
+}
+html.liquiddock .rows:not(.rows--lower) > .row:first-child > .row__shine { display: none; }

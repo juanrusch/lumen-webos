@@ -72,7 +72,7 @@ function applyInPage (s) {
 	const tint = s.tint || (s.frost >= 0 ? `rgba(255, 255, 255, ${s.frost})` : `rgba(0, 0, 0, ${-s.frost})`);
 	const k = s.rim;
 	const rims = `inset 0 0 0 1px rgba(255, 255, 255, ${0.15 * k}), inset 1.5px 1.5px 0 rgba(255, 255, 255, ${0.5 * k}), inset 0 0 12px rgba(255, 255, 255, ${0.2 * k}), 0 20px 44px rgba(0, 0, 0, 0.28)`;
-	const sel = 'html .rows:not(.rows--lower) > .row:first-child::before';
+	const sel = 'html .rows:not(.rows--lower) > .row:first-child > .row__glass';
 	const style = document.createElement('style');
 	style.id = 'lab';
 	style.textContent = `${sel} { -webkit-backdrop-filter: ${bf} !important; backdrop-filter: ${bf} !important; background-color: ${tint} !important;`

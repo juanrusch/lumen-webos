@@ -15,6 +15,8 @@
 	position: absolute; left: 0; top: calc(var(--layout-tile-height) + 36px); width: 660px; text-align: left; pointer-events: none;
 	color: var(--ink-guide); text-shadow: var(--chan-info-shadow);
 	opacity: 0; transition: opacity var(--dur-focus) ease-out;
+	/* its own layer: a fade that makes a layer and drops it draws the block twice per focus move (docs/research/frame-rate.md) */
+	will-change: opacity;
 }
 .tile--focused .chan__info { opacity: 1; }
 .chan__line { font-size: 22px; font-weight: 500; opacity: 0.78; white-space: nowrap; }

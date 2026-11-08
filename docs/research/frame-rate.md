@@ -125,3 +125,37 @@ Then at a normal scrolling pace, one key every 450 ms, with a 45 s rest before e
 | Full guide Down: main thread | 254 ms | 90 ms | 163 ms |
 
 A 600 ms dwell scrolls like no preview at all. It is now the default (`previewTiming.dwell` in `LivePreview.tsx`).
+
+## Down and Up on the LG C1 (webOS 6, 2026-11-08)
+
+Measured on the fork's TV, an LG OLED48C1 on webOS 6.5.3 (Chromium 79, Mali-G51 with 3 cores, four Cortex-A55 cores), with the plain background and no wallpaper picture. The scripts in `tools/tv/perf/` still point at `root@192.168.0.20`; copies with the host changed to `lgtv` were used.
+
+Down from the glass bar into the grid, and Up back, showed nothing new for 450 to 800 ms, then 2 to 18 frames in the next 1.5 s. The frame-rate counter read single digits. `LayerTree.layerPainted` showed about 8 megapixels drawn again on each Down and about 11 on each Up, almost none of it changed:
+
+- The full-screen backdrop (`.lowerveil`, 1920x1080), twice per move. Down and Up restyle it (its fade), and a restyled element draws a gradient given through `var()` again in full (`--veil-tint`, here with no picture, so no canvas).
+- The rows (`.rows`, 1670x1273) once on Down and twice on Up, and the clock, top buttons and weather twice each. They had a layer only while they moved or faded, so each slide made a layer and dropped it, and each change drew them.
+- The glass bar's plate (`::before`, 1882x356) once per move: the row restyles on Down and Up, and the plate's sheen is a gradient through `var()`. The Liquid glass dock rule (`.rows:not(.rows--lower) … ::before`) restyled it on every Down and Up even with the setting off, since Chromium decides what to restyle from the selectors, not from whether `html.liquiddock` is set.
+- Rows 3 and lower had no layer per tile, so each focus move drew the whole row. A hidden open-app dot's rise ran on the main thread and drew its row at its start and end.
+
+On top of that, two writes restyled the whole page: the custom properties `.screen--lower` and `.screen--dockhidden` set on `.screen` (`--delay-show-top`, `--delay-show-bottom`) cost about 35 ms of style per Down and Up, and `--lower-shift` on `.rows` about 30 ms. Timed in the page with a class toggle and a forced style read: toggling `screen--lower` went from 35 ms to 4.5 ms with those two rules gone, and an inline `transform` on `.rows` costs 0.5 ms.
+
+The fixes: plain `transition-delay` rules in place of the custom properties; the rows slide by an inline `transform` (`Home.tsx`); permanent layers on `.rows`, `.status`, `.topbar`, `.homecast`, every tile box and every tile name; the backdrop's picture and the glass plate drawn by child elements (`.lowerveil__fill`, `.row__glass`) that Down and Up do not restyle; the Liquid glass dock rules in their own sheet (`theme/liquid-dock.css`), added to the page only while the setting is on; a hidden dot does not animate, and a shown dot keeps a layer.
+
+| Dock to grid and back (medians of 6) | Before | After |
+|---|---|---|
+| Key to first frame | 450 to 700 ms | 90 to 145 ms |
+| Frames in the 1.5 s after the key | 2 to 18 | 35 to 42 |
+| Worst gap between frames | 52 to 146 ms | 22 to 48 ms |
+| Drawn again per Down / Up | 8 / 11 MP | 0.16 / 0.19 MP |
+
+Each focus move now draws only the tile that gains focus and the one that loses it (about 0.15 to 0.3 MP).
+
+Then three smaller things:
+
+- The `useLayoutEffect` in `Home.tsx` read `offsetTop` after every key's render, which forced a layout of the page inside the key handler (about 24 ms on Down). The rows' places are now read once and kept until the rows change size (a `ResizeObserver`) or change what they hold. The Down handler went from about 48 ms to 16 to 20 ms; only the first Down after a launch still measures (about 14 ms).
+- The Live TV row's now/next block (`.chan__info`) faded with a layer made and dropped each time, so it was drawn twice per move. It keeps its layer now: entering the row went from 1.2 MP to 0.2 MP, and a move along it from 0.5 MP to 0.25 to 0.3 MP.
+- The focused tile's shadow, sheen and brighter fill are drawn again on each move. With all three removed live (an upper bound), Left and Right gained 3 to 5 ms to the first frame and 0.2 frames per move, inside the spread of two runs. Moving them onto layers that only fade would add three or four layers per tile, which the GPU then composites on every frame, so it was not done.
+
+### The display ran at 50 Hz
+
+After Live TV had played, the TV's picture plane ran at 50 Hz (`osd_irq` in `/proc/interrupts` about 100 a second, two per frame; on 2026-10-19 it was 120), and it stayed there after Live TV was closed. WebAppMgr's Chromium still times its frames on a fixed 60 Hz timer (`DelayBasedBeginFrameSource`, interval 16666), so the page makes 60 frames a second for a 50 Hz screen and one in six is never shown. Lumen's frame-rate counter counts the page's frames, so it reads 60 at rest on a 50 Hz screen. Nothing in the page changes this. VRR (FreeSync) is for HDMI games only; the TV's own picture plane does not use it. `/sys/class/graphics/fb0/pan` flips 50 times a second whatever Lumen does, so it does not count Lumen's frames; a DevTools trace does (`NativeViewGLSurfaceEGL:RealSwapBuffers`).

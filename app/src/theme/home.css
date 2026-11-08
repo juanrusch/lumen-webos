@@ -11,9 +11,14 @@
 	transition: transform var(--dur-slide) var(--ease-out), opacity var(--dur-fade) ease var(--delay-show-top);
 }
 /* its bottom edge 64px above the screen's, whatever its height (top is 64px; 1080 - 64 - 64 = 952) */
-/* on Down the clock and top buttons wait --delay-hide-top; hiding the dock is at once */
-.screen--lower { --delay-show-top: var(--delay-hide-top); --delay-show-bottom: 0s; }
-.screen--dockhidden { --delay-show-top: 0s; --delay-show-bottom: 0s; }
+/* on Down the clock and top buttons wait --delay-hide-top; hiding the dock is at once. Plain delay rules, not custom properties set on .screen:
+   a custom property changed there restyles the whole page (about 35 ms on the TV, docs/research/frame-rate.md) */
+.screen--lower .status, .screen--lower .topbar { transition-delay: 0s, var(--delay-hide-top); }
+.screen--dockhidden .status, .screen--dockhidden .topbar { transition-delay: 0s, 0s; }
+.screen--lower .homecast, .screen--dockhidden .homecast { transition-delay: 0s; }
+.screen--lower .videocap--pic, .screen--dockhidden .videocap--pic { transition-delay: 0s, 0s; }
+/* the clock, the top buttons and the weather keep a layer each, so a fade does not make one and drop it, drawing them twice */
+.status, .topbar, .homecast { will-change: opacity, transform; }
 .screen--dockhidden .status { transform: translateY(calc(952px - 100%)); }
 .screen--lower .status { opacity: 0; pointer-events: none; }
 .status svg { position: static; flex: 0 0 auto; width: 28px; height: 28px; margin: 0 14px 0 0; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6)); }
@@ -75,13 +80,14 @@
 
 /* ---------- the rows: the glass bar, then the app grid and the Live TV row under it ---------- */
 
-/* the glass bar sits low, so the first grid row's tops peek in under it; Down slides the stack up by --lower-shift (Home.tsx) with transform only */
+/* the glass bar sits low, so the first grid row's tops peek in under it; Down slides the stack up with an inline transform (Home.tsx), not a
+   custom property, which would restyle every tile (about 30 ms). The rows keep their layer, so a slide does not draw them again */
 .rows {
 	position: absolute; left: var(--layout-rows-edge); right: var(--layout-rows-edge); top: var(--layout-rows-top);
 	transition: transform var(--dur-up) var(--ease-up), opacity var(--dur-fade) ease;
 }
-.rows--lower { transform: translateY(calc(-1 * var(--lower-shift, 300px))); transition: transform var(--dur-down) var(--ease-down), opacity var(--dur-fade) ease; }
-html.wp-video .rows { will-change: transform; }
+.rows { will-change: transform; }
+.rows--lower { transition: transform var(--dur-down) var(--ease-down), opacity var(--dur-fade) ease; }
 /* Hide the dock: the rows slide away */
 .rows--hidden { transform: translateY(1300px); opacity: 0; pointer-events: none; }
 
@@ -119,8 +125,10 @@ html.wp-video .rows { will-change: transform; }
 
 /* ---------- the glass bar (glass-bar): 40px of glass round the first row's tiles, its corners concentric with theirs ---------- */
 
-.rows > .row:first-child::before {
-	content: ''; position: absolute; top: 0;
+.row__glass { display: none; }
+/* an element, not the row's ::before: the row restyles on Down, Up and focus, and a restyle repaints a gradient given through var() in full */
+.rows > .row:first-child > .row__glass {
+	display: block; position: absolute; top: 0; pointer-events: none;
 	left: calc(50% - var(--row-w, 1670px) / 2 - 40px); width: calc(var(--row-w, 1670px) + 80px);
 	height: calc(var(--layout-tile-height) + 80px); border-radius: calc(var(--layout-tile-radius) + 40px);
 	background-color: var(--glass-tint); background-image: var(--glass-bar-sheen); background-repeat: no-repeat;
@@ -129,7 +137,7 @@ html.wp-video .rows { will-change: transform; }
 	will-change: transform;
 }
 /* Settings > Appearance > Dock blur puts the blur back: about 2ms more GPU draw per frame, felt most going left and right */
-html.dockblur .rows > .row:first-child::before { -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
+html.dockblur .rows > .row:first-child > .row__glass { -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
 /* a highlight on the bar's top edge over the focused app, sliding with focus (--sel-x, Row.tsx) and held clear of the rounded ends; it fades out when focus leaves the bar */
 .row__shine { display: none; }
 .rows > .row:first-child > .row__shine {
@@ -141,12 +149,7 @@ html.dockblur .rows > .row:first-child::before { -webkit-backdrop-filter: var(--
 	opacity: 0; transition: transform var(--dur-scroll) var(--ease-out), opacity 200ms ease;
 }
 .rows > .row:first-child.row--focused > .row__shine { opacity: 1; }
-/* Settings > Liquid glass dock (lib/liquidGlass.ts): the bar bends the picture at its rim (an SVG displacement); over a video it only tints, and it is off while the rows are down */
-html.liquiddock .rows:not(.rows--lower) > .row:first-child::before {
-	-webkit-backdrop-filter: blur(0.75px) url(#lg-dock) brightness(1.1) saturate(1.5); backdrop-filter: blur(0.75px) url(#lg-dock) brightness(1.1) saturate(1.5);
-	background: rgba(0, 0, 0, 0.3); box-shadow: inset 0 0 4px 0 rgba(250, 250, 250, 0.5), 0 20px 44px rgba(0, 0, 0, 0.28);
-}
-html.liquiddock .rows:not(.rows--lower) > .row:first-child > .row__shine { display: none; }
+/* Settings > Liquid glass dock: theme/liquid-dock.css, added only while it is on */
 
 /* ---------- the dock hidden: the rows slide away, the top buttons go, a chevron at the bottom shows the way back ---------- */
 

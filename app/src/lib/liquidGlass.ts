@@ -1,6 +1,8 @@
-/** Settings > Liquid glass dock: the SVG filter the glass bar's backdrop-filter points at (#lg-dock, theme/home.css). After nikdelvin/liquid-glass,
+/** Settings > Liquid glass dock: the SVG filter the glass bar's backdrop-filter points at (#lg-dock, theme/liquid-dock.css). After nikdelvin/liquid-glass,
  *  one displacement pass and no colour fringe: the fringe's three passes cost about 8 fps on the TV, standing still. The map must match the
  *  bar's size, so it is rebuilt when the bar changes size. */
+
+import liquidCss from '../theme/liquid-dock.css?inline';
 
 const NS = 'http://www.w3.org/2000/svg';
 const DEPTH = 10, STRENGTH = 100;
@@ -15,17 +17,19 @@ function displacementMap (w: number, h: number, r: number): string {
 }
 
 let svg: SVGSVGElement | null = null;
+/** the liquid look's rules, in the page only while the setting is on (theme/liquid-dock.css says why) */
+let sheet: HTMLStyleElement | null = null;
 let size = '';
 let observer: ResizeObserver | null = null;
 let waiting = 0;
 
 function build (): void {
 	const row = document.querySelector<HTMLElement>('.rows > .row:first-child');
-	if (!row) { waiting = window.setTimeout(build, 500); return; }   // Settings or the guide is open: try again when the home screen is back
-	const glass = getComputedStyle(row, '::before');
-	const w = Math.round(row.offsetWidth - (parseFloat(glass.left) || 0) - (parseFloat(glass.right) || 0));
-	const h = Math.round(parseFloat(glass.height) || 0);
-	const r = Math.min(Math.round(parseFloat(glass.borderTopLeftRadius) || 0), Math.floor(h / 2));
+	const plate = row && row.querySelector<HTMLElement>('.row__glass');
+	if (!row || !plate) { waiting = window.setTimeout(build, 500); return; }   // Settings or the guide is open: try again when the home screen is back
+	const w = plate.offsetWidth;
+	const h = plate.offsetHeight;
+	const r = Math.min(Math.round(parseFloat(getComputedStyle(plate).borderTopLeftRadius) || 0), Math.floor(h / 2));
 	if (!observer) { observer = new ResizeObserver(build); observer.observe(row); }
 	if (!w || !h || `${w}x${h}x${r}` === size || !svg) return;
 	size = `${w}x${h}x${r}`;
@@ -36,6 +40,8 @@ function build (): void {
 
 export function setLiquidDock (on: boolean): void {
 	document.documentElement.classList.toggle('liquiddock', on);
+	if (on && !sheet) { sheet = document.createElement('style'); sheet.id = 'liquid-dock'; sheet.textContent = liquidCss; document.head.appendChild(sheet); }
+	if (!on && sheet) { sheet.remove(); sheet = null; }
 	window.clearTimeout(waiting);
 	if (observer) { observer.disconnect(); observer = null; }
 	if (!on) { if (svg) svg.remove(); svg = null; size = ''; return; }

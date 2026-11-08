@@ -52,7 +52,10 @@
 	opacity: 0; visibility: hidden;
 	transition: opacity var(--dur-focus) ease-out, transform var(--dur-focus) ease-out, visibility 0s linear var(--dur-focus);
 }
-.tile__dot--on::before { opacity: 1; visibility: visible; transition-delay: 0s; }
+.tile__dot--on::before { opacity: 1; visibility: visible; transition-delay: 0s; will-change: transform; }
+/* a hidden dot does not animate its rise: Chromium runs an animation with nothing to show on the main thread and draws the whole row for it, at its
+   start and end. A shown dot keeps a layer of its own (above), so its rise does not draw the row either (docs/research/frame-rate.md) */
+.tile__dot:not(.tile__dot--on)::before { transition: opacity var(--dur-focus) ease-out, visibility 0s linear var(--dur-focus); }
 .tile--focused .tile__dot::before { transform: translateY(-8px); }
 
 /* ---------- on home: tiles lit from above, as on tvOS ---------- */
@@ -70,8 +73,10 @@
 	background: linear-gradient(160deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.06) 30%, rgba(255, 255, 255, 0) 55%, rgba(0, 0, 0, 0.08) 100%);
 	box-shadow: inset 0 2px 1px -1px rgba(255, 255, 255, 0.55), inset 2px 0 1px -1px rgba(255, 255, 255, 0.28), inset 0 -2px 1px -1px rgba(0, 0, 0, 0.18);
 }
-/* the bar's and the first grid row's tiles keep a layer each, so a Down or Up does not re-raster the rows they sit in (docs/research/frame-rate.md) */
-.rows > .row:nth-child(-n+2) .tile__box { will-change: transform; }
+/* every tile and its name keep a layer each, so a focus move, Down or Up draws only the tiles that change, not the rows they sit in
+   (docs/research/frame-rate.md); about 30 small layers */
+.rows .tile__box { will-change: transform; }
+.rows .tile__label { will-change: opacity; }
 
 /* focus-lift on home: a grid tile grows by --lift, a bar tile by --lift-bar so it stays inside the glass; --rx and --ry tilt it under the pointer (Tile.tsx) */
 .rows .row .tile--focused .tile__box {

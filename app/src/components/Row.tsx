@@ -46,6 +46,8 @@ export function Row ({label, items, focused, selected, emptyText, titled, classN
 	return (
 		<section class={`row${focused || rest ? ' row--focused' : ''}${titled ? ' row--titled' : ''}${hidden ? ' row--hidden' : ''}${className ? ' ' + className : ''}`} style={`--row-w:${total}px`} onMouseLeave={onLeave}>
 			<h2 class="row__label">{label}</h2>
+			{/* the glass bar's plate (home.css): an element, not the row's ::before, so a restyle of the row (its focus, Down and Up) does not repaint it */}
+			<div class="row__glass" />
 			{/* --sel-x lives here, not on the row: a style change on the row restyles the bar's glass, and its sheen then repaints in full on every move */}
 			<div class="row__shine" style={`--sel-x:${selX}px`} />
 			<div class="row__viewport">

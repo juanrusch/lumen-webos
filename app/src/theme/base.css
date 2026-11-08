@@ -71,9 +71,13 @@ html.dark.wp-video { --wp-bg: linear-gradient(rgba(8, 10, 18, 0.62), rgba(8, 10,
 
 /* ---------- the veil: the blurred copy of the wallpaper (--wp-bg) behind the lower rows, faded in as the rows come up ---------- */
 
+/* the veil fades; its child draws the picture, so Down and Up, which restyle the veil, do not repaint the picture (components/LowerVeil.tsx) */
 .lowerveil {
 	position: absolute; left: 0; top: 0; right: 0; bottom: 0; pointer-events: none;
 	opacity: 0; transition: opacity var(--dur-veil-up) var(--ease-veil-up); will-change: opacity;
+}
+.lowerveil__fill {
+	position: absolute; left: 0; top: 0; width: 100%; height: 100%;
 	background-color: var(--veil-color);
 	background-image: var(--veil-tint), var(--wp-bg, none);
 	background-size: auto, cover; background-position: 0 0, center; background-repeat: no-repeat;
@@ -81,12 +85,12 @@ html.dark.wp-video { --wp-bg: linear-gradient(rgba(8, 10, 18, 0.62), rgba(8, 10,
 .screen--lower .lowerveil { opacity: 1; transition: opacity var(--dur-veil-down) var(--ease-veil-down); }
 /* the night dimming multiplies the veil's picture by a grey of 55%, which matches the wallpaper at opacity 0.55 over black (not over the video, not in the light look).
    Only with a picture (wp-image): with none, the grey has nothing to multiply and shows as it is. */
-html.night.wp-image:not(.light):not(.wp-video) .lowerveil { background-color: rgb(140, 140, 140); background-blend-mode: normal, multiply; }
-html.wp-video .lowerveil { background-color: transparent; background-image: var(--veil-video); }
+html.night.wp-image:not(.light):not(.wp-video) .lowerveil__fill { background-color: rgb(140, 140, 140); background-blend-mode: normal, multiply; }
+html.wp-video .lowerveil__fill { background-color: transparent; background-image: var(--veil-video); }
 .screen--dockhidden .lowerveil { display: none; }
 /* the picture is drawn in a canvas (components/LowerVeil.tsx): the veil itself draws nothing, so it is one layer with no tiles */
 .lowerveil--canvas { background: none !important; }
-.lowerveil > canvas, .backdrop > canvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+.lowerveil__fill > canvas, .backdrop > canvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
 /* Settings' and the Guide's picture, drawn in a canvas behind their content (ScreenBackdrop, lib/blurCanvas.ts) */
 .backdrop { position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
 
