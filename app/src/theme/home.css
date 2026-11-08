@@ -56,7 +56,7 @@
 	transition: transform var(--dur-focus) ease-out;
 }
 .pill svg { width: 28px; height: 28px; fill: none; stroke: var(--ink-glyph); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-/* the focused or open button inverts to an opaque capsule (--pill-focus-*); it needs no live blur, which would add about 2ms of GPU draw to every frame (docs/frame-rate.md) */
+/* the focused or open button inverts to an opaque capsule (--pill-focus-*); it needs no live blur, which would add about 2ms of GPU draw to every frame (docs/research/frame-rate.md) */
 .pill--focused, .pill--open {
 	transform: scale(1.14); background-color: var(--pill-focus-fill); background-image: var(--pill-focus-sheen); box-shadow: var(--glass-rim-focus);
 	-webkit-backdrop-filter: var(--pill-focus-blur); backdrop-filter: var(--pill-focus-blur);

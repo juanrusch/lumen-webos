@@ -144,8 +144,7 @@ function listViaHomebrew (): Promise<AppEntry[]> {
 				const path = p.largeIcon || p.icon;
 				if (path && icons[p.id]) iconPaths[p.id] = path;
 				const known = APP_CATALOG.find((c) => c.id === p.id);
-				// the catalogue's titles are shorter than LG's ("IPTV Player" vs "webOS IPTV Player"); LG's store titles can carry a tagline
-				// ("Spotify - Music and Podcasts"), so the name is the part before it
+				// the catalogue's titles are shorter than LG's ("IPTV Player" vs "webOS IPTV Player"); a store title's tagline goes ("Spotify - Music and Podcasts")
 				const title = known ? known.title : p.title.split(/\s+[-–—:|]\s+/)[0];
 				return {
 					id: p.id,

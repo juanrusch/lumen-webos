@@ -22,7 +22,7 @@ A push to `main` publishes a Channel release, and a Channel update replaces the 
 
 ## The log
 
-`/var/lib/homehook/lumen.log` is on the TV, and only ssh can read it. The app cannot read it. Use `grep ' boot ' … | tail -3`, `grep guide … | tail`, or `grep ' nav ' …`. `docs/startup-perf.md` explains the boot line.
+`/var/lib/homehook/lumen.log` is on the TV, and only ssh can read it. The app cannot read it. Use `grep ' boot ' … | tail -3`, `grep guide … | tail`, or `grep ' nav ' …`. `docs/research/startup-perf.md` explains the boot line.
 
 ## DevTools: eval, CSS, screenshots, keys
 
@@ -46,6 +46,8 @@ Quirks:
 - A key press wakes the screensaver. Some screens save state: for example, opening the Full guide makes the Guide open there next time. Put things back as they were (Back to home, the same guide mode) after a key-driven screenshot.
 - The page id changes at every relaunch. `cdp.mjs` looks it up each time.
 - Anything set over DevTools is gone after a relaunch or an install. Interacting with the page can also undo an injected effect.
+- The TV is wired only (192.168.0.20 on eth0). Sam switched its Wi-Fi off on 2026-10-31 after a day when both were up on the same subnet and the TV's TLS connections to the PC hung. If `ip -4 addr` shows wlan0 again, that is the first suspect for odd network results.
+- Keep file searches on the TV narrow (`-maxdepth`, a few directories). A `find /` on 2026-10-31 ran for minutes and the TV rebooted during it.
 
 ## Live development with Sam
 
@@ -54,5 +56,5 @@ Use this for a look-and-feel change (spacing, size, position, colour), where one
 1. This is the default for any change Sam is to try, not only look-and-feel. If Sam cannot see the TV now, make the change in source and wait for him; do not build.
 2. Inject the change with `css` (or `eval` for a DOM or state change). Say in one line what to look at, and wait for his reply. Make one change per round.
 3. When Sam says it looks wrong ("things moved", "can you see?"), take a `shot` and measure with `eval`. Do not guess. For example, an absolute label once collapsed the tiles from 212px to 144px, and `getBoundingClientRect` showed it at once.
-4. A heavy effect can look right and still drop the frame rate. Sam judges smoothness on the TV, and the TV's graphics chip is weak (`RESEARCH.md` section 4).
+4. A heavy effect can look right and still drop the frame rate. Sam judges smoothness on the TV, and the TV's graphics chip is weak (`docs/research/RESEARCH.md` section 4).
 5. When Sam says it is right, write the final values into source (the matching file in `app/src/theme/`, a token in `tokens.css` or `themes.css` where the value is one, or the component), and install it with `npm run deploy:home`. Then clear the live block. The injected CSS is never the record.
