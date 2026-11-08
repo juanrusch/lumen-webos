@@ -123,29 +123,24 @@ note_recent() {
 }
 
 # rewrites the LIST (787) and GUIDE (362) binds for $1 = live (both open the guide, GUIDE on its Full guide) or away (GUIDE opens Lumen's Guide, LIST unbound), keeping
-# every other bind; the file is written only when it changes
+# every other bind; the file is written only when it changes. A file that is there but does not parse is left alone, so the Home bind is never lost.
+# Node, not Python: webOS 6 has no python3, and Node is on every webOS TV (home-setup.sh needs it too). Plain ES5 for Node 8.
 guide_binds() {
-  python3 - "$KEYBINDS" "$1" "$GUIDE" "$(me_target)" <<'PY' 2>>/tmp/homehook.log
-import json, sys
-path, mode, guide, lumen = sys.argv[1:5]
-try:
-    with open(path) as f: binds = json.load(f)
-except Exception:
-    binds = {}
-want = dict(binds)
-if mode == 'live':
-    want['787'] = {'action': 'launch', 'id': guide}
-    want['362'] = {'action': 'launch', 'id': guide, 'params': {'view': 'full'}}
-else:
-    want.pop('787', None)
-    if lumen:
-        want['362'] = {'action': 'exec', 'command': 'luna-send -w 10000 -n 1 luna://com.webos.applicationManager/launch \'{"id":"%s","params":{"view":"guide"}}\'' % lumen}
-    else:
-        want.pop('362', None)
-if want != binds:
-    with open(path + '.tmp', 'w') as f: json.dump(want, f)
-    import os; os.rename(path + '.tmp', path)
-PY
+  node -e '
+var fs = require("fs"), a = process.argv, path = a[1], mode = a[2], guide = a[3], lumen = a[4];
+var binds = {};
+if (fs.existsSync(path)) { try { binds = JSON.parse(fs.readFileSync(path, "utf8")); } catch (e) { console.error("guide binds: " + path + " does not parse, left alone"); process.exit(1); } }
+var want = JSON.parse(JSON.stringify(binds));
+if (mode === "live") {
+  want["787"] = {action: "launch", id: guide};
+  want["362"] = {action: "launch", id: guide, params: {view: "full"}};
+} else {
+  delete want["787"];
+  if (lumen) want["362"] = {action: "exec", command: "luna-send -w 10000 -n 1 luna://com.webos.applicationManager/launch '"'"'{\"id\":\"" + lumen + "\",\"params\":{\"view\":\"guide\"}}'"'"'"};
+  else delete want["362"];
+}
+if (JSON.stringify(want) !== JSON.stringify(binds)) { fs.writeFileSync(path + ".tmp", JSON.stringify(want)); fs.renameSync(path + ".tmp", path); }
+' "$KEYBINDS" "$1" "$GUIDE" "$(me_target)" 2>>/tmp/homehook.log
 }
 # the app in front changed from $2 to $1: into Live TV, the binds for it and the guide started hidden; out of it, the other binds and the guide closed
 guide_follow() {
